@@ -8,6 +8,8 @@ declare(strict_types=1);
  */
 namespace DtmClient\JsonRpc;
 
+use function Hyperf\Support\make;
+
 class JsonRpcClientManager
 {
     /**

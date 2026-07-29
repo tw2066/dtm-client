@@ -2,93 +2,38 @@ name: PHPUnit
 
 on: [ push, pull_request ]
 
-env:
-  SWOOLE_VERSION: '4.8.6'
-  SWOW_VERSION: 'develop'
-
 jobs:
-  ci:
-    name: Test PHP ${{ matrix.php-version }} on ${{ matrix.engine }}
-    runs-on: "${{ matrix.os }}"
+  ci32:
+    runs-on: ubuntu-latest
+    container: hyperf/hyperf:${{ matrix.hyperf-version }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
-        php-version: [ '8.0', '8.1' ]
-        engine: [ 'none', 'swoole', 'swow' ]
-      max-parallel: 6
+        hyperf-version:
+          - "8.2-alpine-v3.22-swoole"
+          - "8.3-alpine-v3.23-swoole"
+          - "8.4-alpine-v3.23-swoole"
       fail-fast: false
+      max-parallel: 15
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-version }}
-          tools: phpize
-          ini-values: ｜
-            opcache.enable_cli=1
-
-          coverage: none
-      - name: Setup Swoole
-        if: ${{ matrix.engine == 'swoole' }}
+        uses: actions/checkout@v4
+      - name: Setup Environment
         run: |
-          sudo apt-get clean
-          sudo apt-get update
-          sudo apt-get upgrade -f
-          sudo apt-get install libcurl4-openssl-dev
-          wget https://github.com/swoole/swoole-src/archive/v${SWOOLE_VERSION}.tar.gz -O swoole.tar.gz
-          mkdir -p swoole
-          tar -xf swoole.tar.gz -C swoole --strip-components=1
-          rm swoole.tar.gz
-          cd swoole
-          phpize
-          ./configure --enable-openssl --enable-http2 --enable-swoole-curl --enable-swoole-json
-          make -j$(nproc)
-          sudo make install
-          sudo sh -c "echo extension=swoole > /etc/php/${{ matrix.php-version }}/cli/conf.d/swoole.ini"
+          pwd
+          ls -al
+          php -v
+          php -m
           php --ri swoole
-      - name: Setup Swow
-        if: ${{ matrix.engine == 'swow' }}
-        run: |
-          wget https://github.com/swow/swow/archive/"${SWOW_VERSION}".tar.gz -O swow.tar.gz
-          mkdir -p swow
-          tar -xf swow.tar.gz -C swow --strip-components=1
-          rm swow.tar.gz
-          cd swow/ext || exit
+          composer -V
 
-          phpize
-          ./configure --enable-debug
-          make -j "$(nproc)"
-          sudo make install
-          sudo sh -c "echo extension=swow > /etc/php/${{ matrix.php-version }}/cli/conf.d/swow.ini"
-          php --ri swow
-
-      - name: Setup Packages
+      - name: Install Dependencies
         run: |
-          composer update -o --no-scripts
-          composer update doctrine/instantiator:^1.0
-          composer require symfony/finder:^5.0
-          composer require hyperf/di
-          composer require hyperf/grpc-client
-          composer require hyperf/framework
-          composer require psr/log:^1.0
-          composer require psr/container:^1.0
-          composer require symfony/console:^5.0
-          composer require hyperf/dispatcher
-          composer require hyperf/server
-          composer require hyperf/http-server
-          composer require hyperf/db
-          composer require hyperf/db-connection
-          composer require hyperf/json-rpc
-          composer require hyperf/rpc-client
-          composer require symfony/serializer:^5.0
+          composer update -o 
+          composer info
 
-      - name: Setup Swow Packages
-        if: ${{ matrix.engine == 'swow' }}
-        run: |
-          composer require hyperf/engine-swow
+      - name: Static Analysis
+        run: composer analyse
 
-      - name: Run Test Cases
-        run: |
-          composer analyse
-          composer test
+      - name: Run Tests
+        run: composer test

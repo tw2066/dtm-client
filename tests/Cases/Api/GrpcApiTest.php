@@ -11,10 +11,10 @@ namespace DtmClientTest\Cases\Api;
 use DtmClient\Api\GrpcApi;
 use DtmClient\Grpc\GrpcClientManager;
 use DtmClientTest\Cases\AbstractTestCase;
+use Hyperf\Context\ApplicationContext;
+use Hyperf\Coroutine\Channel\Pool as ChannelPool;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\GrpcClient\BaseClient;
-use Hyperf\Utils\ApplicationContext;
-use Hyperf\Utils\ChannelPool;
 use Mockery;
 use Psr\Container\ContainerInterface;
 

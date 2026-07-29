@@ -5,12 +5,21 @@ namespace DtmClientTest\Cases;
 use DtmClient\Api\ApiInterface;
 use DtmClient\Constants\Protocol;
 use DtmClient\Constants\TransType;
+use DtmClient\Context\Context;
 use DtmClient\Grpc\Message\DtmBranchRequest;
 use DtmClient\Saga;
 use DtmClient\TransContext;
 
 class SagaTest extends AbstractTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // 清理 Context，避免测试间状态泄漏
+        Context::set('DtmClient\Saga.concurrent', false);
+        Context::set('DtmClient\Saga.orders', []);
+    }
+
     public function testInit()
     {
         $api = \Mockery::mock(ApiInterface::class);
@@ -83,9 +92,7 @@ class SagaTest extends AbstractTestCase
         $saga->addBranchOrder(1, ['preBranches']);
         $saga->addBranchOrder(2, ['preBranches1']);
 
-        $ordersProperty = new \ReflectionProperty($saga, 'orders');
-        $ordersProperty->setAccessible(true);
-        $orders = $ordersProperty->getValue($saga);
+        $orders = Context::get('DtmClient\Saga.orders');
         $this->assertEquals([1 => ['preBranches'], 2 => ['preBranches1']], $orders);
     }
 
@@ -97,9 +104,7 @@ class SagaTest extends AbstractTestCase
 
         $saga->enableConcurrent();
 
-        $concurrentProperty = new \ReflectionProperty($saga, 'concurrent');
-        $concurrentProperty->setAccessible(true);
-        $concurrent = $concurrentProperty->getValue($saga);
+        $concurrent = Context::get('DtmClient\Saga.concurrent');
         $this->assertTrue($concurrent);
     }
 
@@ -110,10 +115,8 @@ class SagaTest extends AbstractTestCase
         $saga = new Saga($api);
         $saga->enableConcurrent();
 
-        $ordersProperty = new \ReflectionProperty($saga, 'orders');
-        $ordersProperty->setAccessible(true);
-        $orders = $ordersProperty->getValue($saga);
-        $this->assertSame(null, $orders ?: null);
+        $orders = Context::get('DtmClient\Saga.orders');
+        $this->assertSame([], $orders);
     }
 
     public function testSubmit()

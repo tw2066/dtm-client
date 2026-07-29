@@ -17,6 +17,8 @@ use Hyperf\RpcClient\Client;
 use Hyperf\RpcClient\Exception\RequestException;
 use Psr\Container\ContainerInterface;
 
+use function Hyperf\Support\make;
+
 class JsonRpcClient extends AbstractServiceClient
 {
     public function __construct(ContainerInterface $container)

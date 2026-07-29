@@ -6,6 +6,7 @@ use DtmClient\Barrier;
 use DtmClient\Constants\DbType;
 use DtmClient\Constants\Protocol;
 use DtmClient\Constants\TransType;
+use DtmClient\DbBarrier;
 use DtmClient\MySqlBarrier;
 use DtmClient\TransContext;
 use Hyperf\Contract\ConfigInterface;
@@ -21,7 +22,11 @@ class BarrierTest extends AbstractTestCase
 
         $mySqlBarrier->method('call')->willReturn(true);
 
-        $barrier = new Barrier($configInterface, $mySqlBarrier);
+        $dbBarrier = $this->createMock(DbBarrier::class);
+
+        $dbBarrier->method('call')->willReturn(true);
+
+        $barrier = new Barrier($configInterface, $mySqlBarrier, $dbBarrier);
         $this->assertTrue($barrier->call(function () {
             return true;
         }));
@@ -34,7 +39,9 @@ class BarrierTest extends AbstractTestCase
 
         $mySqlBarrier = $this->createMock(MySqlBarrier::class);
 
-        $barrier = new Barrier($configInterface, $mySqlBarrier);
+        $dbBarrier = $this->createMock(DbBarrier::class);
+
+        $barrier = new Barrier($configInterface, $mySqlBarrier, $dbBarrier);
         $barrier->barrierFrom(TransType::TCC, 'gid', 'branchId', 'try', 'phase2Url', 'testDtm');
 
         $this->assertSame(TransContext::toArray(), [
